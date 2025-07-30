@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply btn bg-anime-600 text-white hover:bg-anime-700 focus:ring-anime-500;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500;
+  }
+  
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden;
+  }
+  
+  .anime-card {
+    @apply card hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .loading-spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-anime-600;
+  }
+} 

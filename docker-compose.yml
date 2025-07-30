@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  anime-watchlist:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_PATH=/app/data/anime.db
+      - STATIC_PATH=/app/static
+      - PORT=8080
+    volumes:
+      - anime_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/anime"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  anime_data: 

@@ -10,17 +10,23 @@ function AnimeList({ darkMode = false }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [hasInitialData, setHasInitialData] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const searchInputRef = useRef(null);
 
   useEffect(() => {
-    fetchAnime();
-  }, []);
+    if (!isInitialized) {
+      setIsInitialized(true);
+      fetchAnime();
+    }
+  }, [isInitialized]);
 
   const fetchAnime = async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/anime/search');
       setAnime(response.data);
+      setHasInitialData(true);
     } catch (error) {
       console.error('Failed to fetch anime:', error);
     } finally {
@@ -53,16 +59,18 @@ function AnimeList({ darkMode = false }) {
   };
 
   useEffect(() => {
+    if (!isInitialized) return;
+    
     const timeoutId = setTimeout(() => {
       if (searchTerm || statusFilter !== 'all') {
         handleSearch();
-      } else {
+      } else if (hasInitialData) {
         fetchAnime();
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, hasInitialData, isInitialized]);
 
   const handleSearchInputChange = (e) => {
     setSearchTerm(e.target.value);
@@ -70,6 +78,14 @@ function AnimeList({ darkMode = false }) {
 
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   };
 
   return (

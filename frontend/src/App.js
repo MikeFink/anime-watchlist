@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Moon, Sun } from 'lucide-react';
 import AnimeList from './components/AnimeList';
@@ -24,18 +24,23 @@ function App() {
     }
   }, [darkMode]);
 
-  const NavLink = ({ to, children, className = "" }) => (
-    <a
-      href={to}
-      className={`px-4 py-2 rounded-lg transition-colors ${
-        window.location.pathname === to
-          ? 'bg-blue-600 text-white shadow-md'
-          : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-      } ${className}`}
-    >
-      {children}
-    </a>
-  );
+  const NavLink = ({ to, children, className = "" }) => {
+    const location = useLocation();
+    const isActive = location.pathname === to;
+    
+    return (
+      <Link
+        to={to}
+        className={`px-4 py-2 rounded-lg transition-colors ${
+          isActive
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+        } ${className}`}
+      >
+        {children}
+      </Link>
+    );
+  };
 
   return (
     <Router>

@@ -9,20 +9,20 @@ type Anime struct {
 	ID            int       `json:"id" db:"id"`
 	AnilistID     int       `json:"anilist_id" db:"anilist_id"`
 	Title         string    `json:"title" db:"title"`
-	TitleEnglish  *string   `json:"title_english" db:"title_english"`
-	TitleRomaji   *string   `json:"title_romaji" db:"title_romaji"`
-	Description   *string   `json:"description" db:"description"`
-	CoverImage    *string   `json:"cover_image" db:"cover_image"`
-	BannerImage   *string   `json:"banner_image" db:"banner_image"`
-	Status        *string   `json:"status" db:"status"`
-	Format        *string   `json:"format" db:"format"`
-	Episodes      *int      `json:"episodes" db:"episodes"`
-	Duration      *int      `json:"duration" db:"duration"`
-	Season        *string   `json:"season" db:"season"`
-	SeasonYear    *int      `json:"season_year" db:"season_year"`
-	Genres        *string   `json:"genres" db:"genres"`
-	Score         *float64  `json:"score" db:"score"`
-	Popularity    *int      `json:"popularity" db:"popularity"`
+	TitleEnglish  string    `json:"title_english" db:"title_english"`
+	TitleRomaji   string    `json:"title_romaji" db:"title_romaji"`
+	Description   string    `json:"description" db:"description"`
+	CoverImage    string    `json:"cover_image" db:"cover_image"`
+	BannerImage   string    `json:"banner_image" db:"banner_image"`
+	Status        string    `json:"status" db:"status"`
+	Format        string    `json:"format" db:"format"`
+	Episodes      int       `json:"episodes" db:"episodes"`
+	Duration      int       `json:"duration" db:"duration"`
+	Season        string    `json:"season" db:"season"`
+	SeasonYear    int       `json:"season_year" db:"season_year"`
+	Genres        string    `json:"genres" db:"genres"`
+	Score         float64   `json:"score" db:"score"`
+	Popularity    int       `json:"popularity" db:"popularity"`
 	IsWatching    bool      `json:"is_watching"`
 	CreatedAt     time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
@@ -100,38 +100,22 @@ func (a *AnilistAnime) ToDomain() Anime {
 		genres = strings.Join(a.Genres, ", ")
 	}
 	
-	coverImage := a.CoverImage.Large
-	bannerImage := a.BannerImage
-	titleEnglish := a.Title.English
-	titleRomaji := a.Title.Romaji
-	description := a.Description
-	status := a.Status
-	format := a.Format
-	season := a.Season
-	episodes := a.Episodes
-	duration := a.Duration
-	seasonYear := a.SeasonYear
-	score := a.AverageScore
-	popularity := a.Popularity
-	
-	anime := Anime{
+	return Anime{
 		AnilistID:    a.ID,
 		Title:        a.Title.Romaji,
-		TitleEnglish: &titleEnglish,
-		TitleRomaji:  &titleRomaji,
-		Description:  &description,
-		CoverImage:   &coverImage,
-		BannerImage:  &bannerImage,
-		Status:       &status,
-		Format:       &format,
-		Episodes:     &episodes,
-		Duration:     &duration,
-		Season:       &season,
-		SeasonYear:   &seasonYear,
-		Genres:       &genres,
-		Score:        &score,
-		Popularity:   &popularity,
+		TitleEnglish: a.Title.English,
+		TitleRomaji:  a.Title.Romaji,
+		Description:  a.Description,
+		CoverImage:   a.CoverImage.Large,
+		BannerImage:  a.BannerImage,
+		Status:       a.Status,
+		Format:       a.Format,
+		Episodes:     a.Episodes,
+		Duration:     a.Duration,
+		Season:       a.Season,
+		SeasonYear:   a.SeasonYear,
+		Genres:       genres,
+		Score:        a.AverageScore,
+		Popularity:   a.Popularity,
 	}
-	
-	return anime
 } 

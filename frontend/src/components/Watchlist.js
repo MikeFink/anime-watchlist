@@ -23,10 +23,10 @@ function Watchlist({ darkMode = false }) {
     }
   };
 
-  const handleRemoveFromWatchlist = async (animeId) => {
+  const handleRemoveFromWatchlist = async (anilistId) => {
     try {
-      await axios.delete(`/api/anime/${animeId}/watch`);
-      setWatchlist(prev => prev.filter(item => item.id !== animeId));
+      await axios.delete(`/api/anime/${anilistId}/watch`);
+      setWatchlist(prev => prev.filter(item => item.anilist_id !== anilistId));
     } catch (error) {
       console.error('Failed to remove from watchlist:', error);
       alert('Failed to remove from watchlist. Please try again.');
@@ -67,6 +67,27 @@ function Watchlist({ darkMode = false }) {
       default:
         return status || 'Unknown';
     }
+  };
+
+  const sanitizeHtml = (html) => {
+    if (!html) return '';
+    
+    // Convert HTML tags to proper formatting
+    let processed = html
+      .replace(/<i>/gi, '<em>')
+      .replace(/<\/i>/gi, '</em>')
+      .replace(/<b>/gi, '<strong>')
+      .replace(/<\/b>/gi, '</strong>')
+      .replace(/<br\s*\/?>/gi, '<br>');
+    
+    // Allow only specific tags and remove others
+    processed = processed.replace(/<[^>]*>/g, (match) => {
+      const allowedTags = ['em', 'strong', 'br', 'p', 'span'];
+      const tagName = match.replace(/[<>]/g, '').split(' ')[0].toLowerCase();
+      return allowedTags.includes(tagName) ? match : '';
+    });
+    
+    return processed;
   };
 
   if (loading) {
@@ -145,7 +166,7 @@ function Watchlist({ darkMode = false }) {
 
                 {/* Remove Button */}
                 <button
-                  onClick={() => handleRemoveFromWatchlist(anime.id)}
+                  onClick={() => handleRemoveFromWatchlist(anime.anilist_id)}
                   className="absolute bottom-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -157,11 +178,12 @@ function Watchlist({ darkMode = false }) {
                 <h3 className="font-semibold text-lg mb-2 line-clamp-2">{anime.title}</h3>
                 
                 {anime.description && (
-                  <p className={`text-sm mb-3 line-clamp-3 ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>
-                    {anime.description}
-                  </p>
+                  <div 
+                    className={`text-sm mb-3 line-clamp-3 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(anime.description) }}
+                  />
                 )}
 
                 {/* Details */}

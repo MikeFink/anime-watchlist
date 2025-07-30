@@ -6,7 +6,6 @@ import (
 )
 
 type Anime struct {
-	ID            int       `json:"id" db:"id"`
 	AnilistID     int       `json:"anilist_id" db:"anilist_id"`
 	Title         string    `json:"title" db:"title"`
 	TitleEnglish  string    `json:"title_english" db:"title_english"`
@@ -36,42 +35,12 @@ type WatchlistItem struct {
 }
 
 type AnimeSearchFilter struct {
-	Search   string `json:"search"`
-	Status   string `json:"status"`
-	Season   string `json:"season"`
-	Year     int    `json:"year"`
-	Page     int    `json:"page"`
-	PageSize int    `json:"page_size"`
-}
-
-type AnilistAnime struct {
-	ID          int     `json:"id"`
-	Title       struct {
-		Romaji  string `json:"romaji"`
-		English string `json:"english"`
-	} `json:"title"`
-	Description string `json:"description"`
-	CoverImage  struct {
-		Large string `json:"large"`
-	} `json:"coverImage"`
-	BannerImage string `json:"bannerImage"`
-	Status      string `json:"status"`
-	Format      string `json:"format"`
-	Episodes    int    `json:"episodes"`
-	Duration    int    `json:"duration"`
-	Season      string `json:"season"`
-	SeasonYear  int    `json:"seasonYear"`
-	Genres      []string `json:"genres"`
-	AverageScore float64 `json:"averageScore"`
-	Popularity  int     `json:"popularity"`
-}
-
-type AnilistResponse struct {
-	Data struct {
-		Page struct {
-			Media []AnilistAnime `json:"media"`
-		} `json:"Page"`
-	} `json:"data"`
+	Search     string `json:"search"`
+	Status     string `json:"status"`
+	Season     string `json:"season"`
+	SeasonYear int    `json:"season_year"`
+	Page       int    `json:"page"`
+	PageSize   int    `json:"page_size"`
 }
 
 func (f *AnimeSearchFilter) Validate() error {
@@ -84,14 +53,64 @@ func (f *AnimeSearchFilter) Validate() error {
 	return nil
 }
 
-func (a *Anime) Validate() error {
-	if a.Title == "" {
-		return ErrInvalidTitle
-	}
-	if a.AnilistID <= 0 {
-		return ErrInvalidAnilistID
-	}
-	return nil
+type PlexShow struct {
+	ID          int       `json:"id" db:"id"`
+	PlexID      int       `json:"plex_id" db:"plex_id"`
+	Title       string    `json:"title" db:"title"`
+	AnilistID   *int      `json:"anilist_id" db:"anilist_id"`
+	Year        int       `json:"year" db:"year"`
+	EpisodeCount int      `json:"episode_count" db:"episode_count"`
+	LastUpdated time.Time `json:"last_updated" db:"last_updated"`
+	Anime       *Anime    `json:"anime,omitempty"`
+}
+
+type PlexConfig struct {
+	ServerURL   string `json:"server_url"`
+	Token       string `json:"token"`
+	LibraryID   int    `json:"library_id"`
+	SyncEnabled bool   `json:"sync_enabled"`
+}
+
+type ServerStatus struct {
+	ShowsOnServer    int `json:"shows_on_server"`
+	MappedToAnilist  int `json:"mapped_to_anilist"`
+	UnmappedShows    int `json:"unmapped_shows"`
+	WatchlistShows   int `json:"watchlist_shows"`
+	MissingFromServer int `json:"missing_from_server"`
+}
+
+type AnilistAnime struct {
+	ID          int     `json:"id"`
+	Title       Title   `json:"title"`
+	Description string  `json:"description"`
+	CoverImage  Cover   `json:"coverImage"`
+	BannerImage string  `json:"bannerImage"`
+	Status      string  `json:"status"`
+	Format      string  `json:"format"`
+	Episodes    int     `json:"episodes"`
+	Duration    int     `json:"duration"`
+	Season      string  `json:"season"`
+	SeasonYear  int     `json:"seasonYear"`
+	Genres      []string `json:"genres"`
+	AverageScore float64 `json:"averageScore"`
+	Popularity   int     `json:"popularity"`
+}
+
+type Title struct {
+	Romaji  string `json:"romaji"`
+	English string `json:"english"`
+}
+
+type Cover struct {
+	Large string `json:"large"`
+}
+
+type AnilistResponse struct {
+	Data struct {
+		Page struct {
+			Media []AnilistAnime `json:"media"`
+		} `json:"Page"`
+	} `json:"data"`
 }
 
 func (a *AnilistAnime) ToDomain() Anime {
@@ -99,7 +118,7 @@ func (a *AnilistAnime) ToDomain() Anime {
 	if len(a.Genres) > 0 {
 		genres = strings.Join(a.Genres, ", ")
 	}
-	
+
 	return Anime{
 		AnilistID:    a.ID,
 		Title:        a.Title.Romaji,

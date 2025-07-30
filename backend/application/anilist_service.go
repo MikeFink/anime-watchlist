@@ -86,8 +86,9 @@ type GraphQLRequest struct {
 
 func (s *AnilistService) SearchAnime(filter domain.AnimeSearchFilter) ([]domain.Anime, error) {
 	variables := map[string]interface{}{
-		"page":     filter.Page,
-		"perPage":  filter.PageSize,
+		"page":      filter.Page,
+		"perPage":   filter.PageSize,
+		"isAdult":   false,
 	}
 
 	if filter.Search != "" {
@@ -99,36 +100,76 @@ func (s *AnilistService) SearchAnime(filter domain.AnimeSearchFilter) ([]domain.
 	if filter.Season != "" {
 		variables["season"] = filter.Season
 	}
-	if filter.Year > 0 {
-		variables["seasonYear"] = filter.Year
+	if filter.SeasonYear != 0 {
+		variables["seasonYear"] = filter.SeasonYear
 	}
 
-	req := GraphQLRequest{
-		Query:     searchQuery,
-		Variables: variables,
-	}
+	query := `query SearchAnime($page: Int, $perPage: Int, $search: String, $status: MediaStatus, $season: MediaSeason, $seasonYear: Int, $isAdult: Boolean) {
+		Page(page: $page, perPage: $perPage) {
+			media(search: $search, status: $status, season: $season, seasonYear: $seasonYear, isAdult: $isAdult) {
+				id
+				title {
+					romaji
+					english
+				}
+				description
+				coverImage {
+					large
+				}
+				bannerImage
+				status
+				format
+				episodes
+				duration
+				season
+				seasonYear
+				genres
+				averageScore
+				popularity
+			}
+		}
+	}`
 
 	var response domain.AnilistResponse
-	if err := s.makeRequest(req, &response); err != nil {
-		return nil, fmt.Errorf("failed to search anime: %w", err)
+	if err := s.makeRequest(query, variables, &response); err != nil {
+		return nil, err
 	}
 
-	animes := make([]domain.Anime, len(response.Data.Page.Media))
-	for i, media := range response.Data.Page.Media {
-		animes[i] = media.ToDomain()
+	var anime []domain.Anime
+	for _, media := range response.Data.Page.Media {
+		anime = append(anime, media.ToDomain())
 	}
 
-	return animes, nil
+	return anime, nil
 }
 
-func (s *AnilistService) GetAnimeByID(anilistID int) (*domain.Anime, error) {
-	variables := map[string]interface{}{
-		"id": anilistID,
-	}
+func (s *AnilistService) GetAnimeByID(id int) (*domain.Anime, error) {
+	query := `query GetAnime($id: Int) {
+		Media(id: $id) {
+			id
+			title {
+				romaji
+				english
+			}
+			description
+			coverImage {
+				large
+			}
+			bannerImage
+			status
+			format
+			episodes
+			duration
+			season
+			seasonYear
+			genres
+			averageScore
+			popularity
+		}
+	}`
 
-	req := GraphQLRequest{
-		Query:     animeQuery,
-		Variables: variables,
+	variables := map[string]interface{}{
+		"id": id,
 	}
 
 	var response struct {
@@ -137,15 +178,20 @@ func (s *AnilistService) GetAnimeByID(anilistID int) (*domain.Anime, error) {
 		} `json:"data"`
 	}
 
-	if err := s.makeRequest(req, &response); err != nil {
-		return nil, fmt.Errorf("failed to get anime by ID: %w", err)
+	if err := s.makeRequest(query, variables, &response); err != nil {
+		return nil, err
 	}
 
 	anime := response.Data.Media.ToDomain()
 	return &anime, nil
 }
 
-func (s *AnilistService) makeRequest(req GraphQLRequest, response interface{}) error {
+func (s *AnilistService) makeRequest(query string, variables map[string]interface{}, response interface{}) error {
+	req := GraphQLRequest{
+		Query:     query,
+		Variables: variables,
+	}
+
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)

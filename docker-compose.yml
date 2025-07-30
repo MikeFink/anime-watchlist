@@ -6,9 +6,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DB_PATH=/app/data/anime.db
+      - DATABASE_PATH=/app/data/anime.db
       - STATIC_PATH=/app/static
       - PORT=8080
+      - PLEX_SERVER_URL=${PLEX_SERVER_URL}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - PLEX_LIBRARY_ID=${PLEX_LIBRARY_ID}
+      - PLEX_SYNC_ENABLED=${PLEX_SYNC_ENABLED}
     volumes:
       - anime_data:/app/data
     restart: unless-stopped

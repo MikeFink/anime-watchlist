@@ -21,8 +21,5 @@ COPY --from=node-builder /app/build/* ./static/
 RUN mkdir -p /app/data
 
 EXPOSE 8080
-ENV DB_PATH=/app/data/anime.db
-ENV STATIC_PATH=/app/static
-ENV PORT=8080
 
 CMD ["./main"] 

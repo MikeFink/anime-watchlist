@@ -29,7 +29,7 @@ func (h *Handlers) SearchAnime(w http.ResponseWriter, r *http.Request) {
 
 	if yearStr := r.URL.Query().Get("year"); yearStr != "" {
 		if year, err := strconv.Atoi(yearStr); err == nil {
-			filter.Year = year
+			filter.SeasonYear = year
 		}
 	}
 

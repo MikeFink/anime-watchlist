@@ -9,6 +9,7 @@ import (
 
 	"anime-watchlist/backend/api"
 	"anime-watchlist/backend/application"
+	"anime-watchlist/backend/domain"
 	"anime-watchlist/backend/infrastructure/config"
 	"anime-watchlist/backend/infrastructure/database"
 )
@@ -23,9 +24,20 @@ func main() {
 	defer db.Close()
 
 	watchlistRepo := database.NewWatchlistRepository(db)
+	plexRepo := database.NewPlexRepository(db.DB)
 	anilistService := application.NewAnilistService()
+	
+	plexConfig := domain.PlexConfig{
+		ServerURL:   cfg.Plex.ServerURL,
+		Token:       cfg.Plex.Token,
+		LibraryID:   cfg.Plex.LibraryID,
+		SyncEnabled: cfg.Plex.SyncEnabled,
+	}
+	plexService := application.NewPlexService(plexConfig)
+	
 	service := application.NewAnimeService(watchlistRepo, anilistService)
 	handlers := api.NewHandlers(service)
+	plexHandlers := api.NewPlexHandlers(plexService, plexRepo)
 
 	mux := http.NewServeMux()
 
@@ -33,6 +45,16 @@ func main() {
 	mux.HandleFunc("/api/anime/search", handlers.SearchAnime)
 	mux.HandleFunc("/api/anime/", handlers.HandleWatchlist)
 	mux.HandleFunc("/api/watchlist/count", handlers.GetWatchlistCount)
+
+	mux.HandleFunc("/api/plex/status", plexHandlers.GetServerStatus)
+	mux.HandleFunc("/api/plex/sync", plexHandlers.SyncPlexShows)
+	mux.HandleFunc("/api/plex/shows", plexHandlers.GetShowsOnServer)
+	mux.HandleFunc("/api/plex/unmapped", plexHandlers.GetUnmappedShows)
+	mux.HandleFunc("/api/plex/search", plexHandlers.SearchShowsOnServer)
+	mux.HandleFunc("/api/plex/map", plexHandlers.MapShowToAnilist)
+	mux.HandleFunc("/api/plex/auto-map", plexHandlers.AutoMapShow)
+	mux.HandleFunc("/api/plex/bulk-auto-map", plexHandlers.BulkAutoMapShows)
+	mux.HandleFunc("/api/plex/check", plexHandlers.CheckShowOnServer)
 
 	handler := api.LoggingMiddleware()(
 		api.RequestIDMiddleware()(

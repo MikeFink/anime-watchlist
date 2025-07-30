@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Moon, Sun } from 'lucide-react';
 import AnimeList from './components/AnimeList';
 import Watchlist from './components/Watchlist';
+import PlexManager from './components/PlexManager';
 import LoadingSpinner from './components/LoadingSpinner';
 
 axios.defaults.baseURL = window.location.origin;
@@ -86,6 +87,7 @@ function App() {
             <div className="flex space-x-8">
               <NavLink to="/">Search Anime</NavLink>
               <NavLink to="/watchlist">My Watchlist</NavLink>
+              <NavLink to="/plex">Plex Manager</NavLink>
             </div>
           </div>
         </nav>
@@ -94,6 +96,7 @@ function App() {
           <Routes>
             <Route path="/" element={<AnimeList darkMode={darkMode} />} />
             <Route path="/watchlist" element={<Watchlist darkMode={darkMode} />} />
+            <Route path="/plex" element={<PlexManager darkMode={darkMode} />} />
           </Routes>
         </main>
       </div>

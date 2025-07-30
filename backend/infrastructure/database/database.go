@@ -42,15 +42,25 @@ func (d *Database) Close() error {
 
 func (d *Database) migrate() error {
 	queries := []string{
-		`DROP TABLE IF EXISTS watchlist`,
-		`DROP TABLE IF EXISTS anime`,
 		`CREATE TABLE IF NOT EXISTS watchlist (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			anilist_id INTEGER UNIQUE NOT NULL,
-			added_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_watchlist_anilist_id ON watchlist(anilist_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_watchlist_added_at ON watchlist(added_at DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_watchlist_added_at ON watchlist(added_at)`,
+		`CREATE TABLE IF NOT EXISTS plex_shows (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			plex_id INTEGER UNIQUE NOT NULL,
+			title TEXT NOT NULL,
+			anilist_id INTEGER,
+			year INTEGER,
+			episode_count INTEGER,
+			last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_plex_shows_plex_id ON plex_shows(plex_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_plex_shows_anilist_id ON plex_shows(anilist_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_plex_shows_title ON plex_shows(title)`,
 	}
 
 	for _, query := range queries {

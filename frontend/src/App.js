@@ -10,7 +10,6 @@ axios.defaults.baseURL = window.location.origin;
 
 function App() {
   const [loading, setLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
@@ -24,19 +23,6 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
-
-  const handleSync = async () => {
-    setSyncLoading(true);
-    try {
-      await axios.post('/api/sync');
-      window.location.reload();
-    } catch (error) {
-      console.error('Sync failed:', error);
-      alert('Failed to sync anime data');
-    } finally {
-      setSyncLoading(false);
-    }
-  };
 
   const NavLink = ({ to, children, className = "" }) => (
     <a
@@ -81,20 +67,6 @@ function App() {
                 >
                   {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
-                <button
-                  onClick={handleSync}
-                  disabled={syncLoading}
-                  className="btn btn-primary flex items-center gap-2"
-                >
-                  {syncLoading ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  )}
-                  Sync Data
-                </button>
               </div>
             </div>
           </div>
@@ -107,7 +79,7 @@ function App() {
         }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex space-x-8">
-              <NavLink to="/">All Anime</NavLink>
+              <NavLink to="/">Search Anime</NavLink>
               <NavLink to="/watchlist">My Watchlist</NavLink>
             </div>
           </div>

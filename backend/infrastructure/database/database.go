@@ -42,37 +42,15 @@ func (d *Database) Close() error {
 
 func (d *Database) migrate() error {
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS anime (
-			id INTEGER PRIMARY KEY,
-			anilist_id INTEGER UNIQUE,
-			title TEXT NOT NULL,
-			title_english TEXT,
-			title_romaji TEXT,
-			description TEXT,
-			cover_image TEXT,
-			banner_image TEXT,
-			status TEXT,
-			format TEXT,
-			episodes INTEGER,
-			duration INTEGER,
-			season TEXT,
-			season_year INTEGER,
-			genres TEXT,
-			score REAL,
-			popularity INTEGER,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
+		`DROP TABLE IF EXISTS watchlist`,
+		`DROP TABLE IF EXISTS anime`,
 		`CREATE TABLE IF NOT EXISTS watchlist (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			anime_id INTEGER,
-			added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (anime_id) REFERENCES anime (id)
+			anilist_id INTEGER UNIQUE NOT NULL,
+			added_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE INDEX IF NOT EXISTS idx_anime_anilist_id ON anime(anilist_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_watchlist_anime_id ON watchlist(anime_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_anime_popularity ON anime(popularity DESC)`,
-		`CREATE INDEX IF NOT EXISTS idx_anime_score ON anime(score DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_watchlist_anilist_id ON watchlist(anilist_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_watchlist_added_at ON watchlist(added_at DESC)`,
 	}
 
 	for _, query := range queries {

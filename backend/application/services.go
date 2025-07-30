@@ -2,58 +2,89 @@ package application
 
 import (
 	"fmt"
-	"os/exec"
 
 	"anime-watchlist/backend/domain"
 	"anime-watchlist/backend/infrastructure/database"
 )
 
 type AnimeService struct {
-	repo *database.AnimeRepository
+	watchlistRepo *database.WatchlistRepository
+	anilistService *AnilistService
 }
 
-func NewAnimeService(repo *database.AnimeRepository) *AnimeService {
-	return &AnimeService{repo: repo}
+func NewAnimeService(watchlistRepo *database.WatchlistRepository, anilistService *AnilistService) *AnimeService {
+	return &AnimeService{
+		watchlistRepo: watchlistRepo,
+		anilistService: anilistService,
+	}
 }
 
-func (s *AnimeService) GetAllAnime(filter domain.AnimeFilter) ([]domain.Anime, error) {
-	return s.repo.GetAll(filter)
+func (s *AnimeService) SearchAnime(filter domain.AnimeSearchFilter) ([]domain.Anime, error) {
+	if err := filter.Validate(); err != nil {
+		return nil, err
+	}
+
+	animes, err := s.anilistService.SearchAnime(filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search anime: %w", err)
+	}
+
+	for i := range animes {
+		isWatching, err := s.watchlistRepo.IsInWatchlist(animes[i].AnilistID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check watchlist status: %w", err)
+		}
+		animes[i].IsWatching = isWatching
+	}
+
+	return animes, nil
 }
 
 func (s *AnimeService) GetWatchlist() ([]domain.Anime, error) {
-	return s.repo.GetWatchlist()
-}
-
-func (s *AnimeService) AddToWatchlist(animeID int) error {
-	if animeID <= 0 {
-		return fmt.Errorf("invalid anime ID: %d", animeID)
-	}
-
-	return s.repo.AddToWatchlist(animeID)
-}
-
-func (s *AnimeService) RemoveFromWatchlist(animeID int) error {
-	if animeID <= 0 {
-		return fmt.Errorf("invalid anime ID: %d", animeID)
-	}
-
-	return s.repo.RemoveFromWatchlist(animeID)
-}
-
-func (s *AnimeService) SyncAnimeData() error {
-	cmd := exec.Command("python3", "scripts/fetch_anime.py")
-	output, err := cmd.CombinedOutput()
+	watchlistItems, err := s.watchlistRepo.GetWatchlist()
 	if err != nil {
-		return fmt.Errorf("failed to sync anime data: %w, output: %s", err, string(output))
+		return nil, fmt.Errorf("failed to get watchlist: %w", err)
 	}
 
-	return nil
+	animes := make([]domain.Anime, len(watchlistItems))
+	for i, item := range watchlistItems {
+		anime, err := s.anilistService.GetAnimeByID(item.AnilistID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get anime data for ID %d: %w", item.AnilistID, err)
+		}
+		
+		anime.IsWatching = true
+		animes[i] = *anime
+	}
+
+	return animes, nil
 }
 
-func (s *AnimeService) UpsertAnime(anime *domain.Anime) error {
-	return s.repo.Upsert(anime)
+func (s *AnimeService) AddToWatchlist(anilistID int) error {
+	if anilistID <= 0 {
+		return fmt.Errorf("invalid anilist ID: %d", anilistID)
+	}
+
+	isWatching, err := s.watchlistRepo.IsInWatchlist(anilistID)
+	if err != nil {
+		return fmt.Errorf("failed to check watchlist: %w", err)
+	}
+
+	if isWatching {
+		return fmt.Errorf("anime already in watchlist")
+	}
+
+	return s.watchlistRepo.AddToWatchlist(anilistID)
 }
 
-func (s *AnimeService) BulkUpsertAnime(animes []domain.Anime) error {
-	return s.repo.BulkUpsert(animes)
+func (s *AnimeService) RemoveFromWatchlist(anilistID int) error {
+	if anilistID <= 0 {
+		return fmt.Errorf("invalid anilist ID: %d", anilistID)
+	}
+
+	return s.watchlistRepo.RemoveFromWatchlist(anilistID)
+}
+
+func (s *AnimeService) GetWatchlistCount() (int, error) {
+	return s.watchlistRepo.GetWatchlistCount()
 } 

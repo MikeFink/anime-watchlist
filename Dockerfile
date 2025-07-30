@@ -13,10 +13,9 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM python:3.11-alpine
-RUN apk add --no-cache sqlite && pip install requests
+FROM alpine:latest
+RUN apk add --no-cache sqlite
 WORKDIR /app
-COPY backend/scripts/ ./scripts/
 COPY --from=go-builder /app/main ./main
 COPY --from=node-builder /app/build/* ./static/
 RUN mkdir -p /app/data

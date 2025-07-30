@@ -22,16 +22,17 @@ func main() {
 	}
 	defer db.Close()
 
-	repo := database.NewAnimeRepository(db)
-	service := application.NewAnimeService(repo)
+	watchlistRepo := database.NewWatchlistRepository(db)
+	anilistService := application.NewAnilistService()
+	service := application.NewAnimeService(watchlistRepo, anilistService)
 	handlers := api.NewHandlers(service)
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/anime/watching", handlers.GetWatchlist)
-	mux.HandleFunc("/api/anime", handlers.GetAnime)
+	mux.HandleFunc("/api/anime/search", handlers.SearchAnime)
 	mux.HandleFunc("/api/anime/", handlers.HandleWatchlist)
-	mux.HandleFunc("/api/sync", handlers.SyncAnimeData)
+	mux.HandleFunc("/api/watchlist/count", handlers.GetWatchlistCount)
 
 	handler := api.LoggingMiddleware()(
 		api.RequestIDMiddleware()(

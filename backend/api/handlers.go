@@ -18,8 +18,8 @@ func NewHandlers(animeService *application.AnimeService) *Handlers {
 	return &Handlers{animeService: animeService}
 }
 
-func (h *Handlers) GetAnime(w http.ResponseWriter, r *http.Request) {
-	filter := domain.AnimeFilter{
+func (h *Handlers) SearchAnime(w http.ResponseWriter, r *http.Request) {
+	filter := domain.AnimeSearchFilter{
 		Search:   r.URL.Query().Get("search"),
 		Status:   r.URL.Query().Get("status"),
 		Season:   r.URL.Query().Get("season"),
@@ -45,9 +45,9 @@ func (h *Handlers) GetAnime(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	animes, err := h.animeService.GetAllAnime(filter)
+	animes, err := h.animeService.SearchAnime(filter)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to fetch anime", err.Error())
+		respondWithError(w, http.StatusInternalServerError, "Failed to search anime", err.Error())
 		return
 	}
 
@@ -67,28 +67,25 @@ func (h *Handlers) GetWatchlist(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleWatchlist(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	if len(pathParts) < 4 {
-		respondWithError(w, http.StatusBadRequest, "Invalid path", "Expected /api/anime/{id}/watch")
+		respondWithError(w, http.StatusBadRequest, "Invalid path", "Expected /api/anime/{anilist_id}/watch")
 		return
 	}
 
-	idStr := pathParts[2]
-	id, err := strconv.Atoi(idStr)
+	anilistIDStr := pathParts[2]
+	anilistID, err := strconv.Atoi(anilistIDStr)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid anime ID", "Anime ID must be a valid integer")
+		respondWithError(w, http.StatusBadRequest, "Invalid anilist ID", "Anilist ID must be a valid integer")
 		return
 	}
 
 	switch r.Method {
 	case "POST":
-		err = h.animeService.AddToWatchlist(id)
+		err = h.animeService.AddToWatchlist(anilistID)
 		if err != nil {
 			status := http.StatusInternalServerError
 			message := "Failed to add anime to watchlist"
 
-			if err.Error() == "anime not found" {
-				status = http.StatusNotFound
-				message = "Anime not found"
-			} else if err.Error() == "anime already in watchlist" {
+			if err.Error() == "anime already in watchlist" {
 				status = http.StatusConflict
 				message = "Anime already in watchlist"
 			}
@@ -100,7 +97,7 @@ func (h *Handlers) HandleWatchlist(w http.ResponseWriter, r *http.Request) {
 		respondWithJSON(w, http.StatusOK, map[string]string{"message": "Added to watchlist"})
 
 	case "DELETE":
-		err = h.animeService.RemoveFromWatchlist(id)
+		err = h.animeService.RemoveFromWatchlist(anilistID)
 		if err != nil {
 			status := http.StatusInternalServerError
 			message := "Failed to remove anime from watchlist"
@@ -121,14 +118,14 @@ func (h *Handlers) HandleWatchlist(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) SyncAnimeData(w http.ResponseWriter, r *http.Request) {
-	err := h.animeService.SyncAnimeData()
+func (h *Handlers) GetWatchlistCount(w http.ResponseWriter, r *http.Request) {
+	count, err := h.animeService.GetWatchlistCount()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to sync anime data", err.Error())
+		respondWithError(w, http.StatusInternalServerError, "Failed to get watchlist count", err.Error())
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, map[string]string{"message": "Anime data synced successfully"})
+	respondWithJSON(w, http.StatusOK, map[string]int{"count": count})
 }
 
 func respondWithJSON(w http.ResponseWriter, status int, data interface{}) {

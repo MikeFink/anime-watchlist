@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"time"
 )
 
@@ -28,13 +29,13 @@ type Anime struct {
 }
 
 type WatchlistItem struct {
-	ID      int       `json:"id" db:"id"`
-	AnimeID int       `json:"anime_id" db:"anime_id"`
-	AddedAt time.Time `json:"added_at" db:"added_at"`
-	Anime   Anime     `json:"anime"`
+	ID        int       `json:"id" db:"id"`
+	AnilistID int       `json:"anilist_id" db:"anilist_id"`
+	AddedAt   time.Time `json:"added_at" db:"added_at"`
+	Anime     *Anime    `json:"anime,omitempty"`
 }
 
-type AnimeFilter struct {
+type AnimeSearchFilter struct {
 	Search   string `json:"search"`
 	Status   string `json:"status"`
 	Season   string `json:"season"`
@@ -43,11 +44,41 @@ type AnimeFilter struct {
 	PageSize int    `json:"page_size"`
 }
 
-func (f *AnimeFilter) Validate() error {
+type AnilistAnime struct {
+	ID          int     `json:"id"`
+	Title       struct {
+		Romaji  string `json:"romaji"`
+		English string `json:"english"`
+	} `json:"title"`
+	Description string `json:"description"`
+	CoverImage  struct {
+		Large string `json:"large"`
+	} `json:"coverImage"`
+	BannerImage string `json:"bannerImage"`
+	Status      string `json:"status"`
+	Format      string `json:"format"`
+	Episodes    int    `json:"episodes"`
+	Duration    int    `json:"duration"`
+	Season      string `json:"season"`
+	SeasonYear  int    `json:"seasonYear"`
+	Genres      []string `json:"genres"`
+	AverageScore float64 `json:"averageScore"`
+	Popularity  int     `json:"popularity"`
+}
+
+type AnilistResponse struct {
+	Data struct {
+		Page struct {
+			Media []AnilistAnime `json:"media"`
+		} `json:"Page"`
+	} `json:"data"`
+}
+
+func (f *AnimeSearchFilter) Validate() error {
 	if f.Page < 1 {
 		f.Page = 1
 	}
-	if f.PageSize < 1 || f.PageSize > 100 {
+	if f.PageSize < 1 || f.PageSize > 50 {
 		f.PageSize = 20
 	}
 	return nil
@@ -61,4 +92,46 @@ func (a *Anime) Validate() error {
 		return ErrInvalidAnilistID
 	}
 	return nil
+}
+
+func (a *AnilistAnime) ToDomain() Anime {
+	genres := ""
+	if len(a.Genres) > 0 {
+		genres = strings.Join(a.Genres, ", ")
+	}
+	
+	coverImage := a.CoverImage.Large
+	bannerImage := a.BannerImage
+	titleEnglish := a.Title.English
+	titleRomaji := a.Title.Romaji
+	description := a.Description
+	status := a.Status
+	format := a.Format
+	season := a.Season
+	episodes := a.Episodes
+	duration := a.Duration
+	seasonYear := a.SeasonYear
+	score := a.AverageScore
+	popularity := a.Popularity
+	
+	anime := Anime{
+		AnilistID:    a.ID,
+		Title:        a.Title.Romaji,
+		TitleEnglish: &titleEnglish,
+		TitleRomaji:  &titleRomaji,
+		Description:  &description,
+		CoverImage:   &coverImage,
+		BannerImage:  &bannerImage,
+		Status:       &status,
+		Format:       &format,
+		Episodes:     &episodes,
+		Duration:     &duration,
+		Season:       &season,
+		SeasonYear:   &seasonYear,
+		Genres:       &genres,
+		Score:        &score,
+		Popularity:   &popularity,
+	}
+	
+	return anime
 } 
